@@ -18,7 +18,7 @@ function Vista({ a }: { a: Adjunto }) {
       {a.tipo === 'foto' && (url ? <img src={url} alt="" className="aspect-[4/3] w-full object-cover" /> : <div className="aspect-[4/3] grid place-items-center text-xs text-neutral-400">Foto en el servidor</div>)}
       {a.tipo === 'audio' && (url ? <audio controls src={url} className="w-full p-2" /> : <div className="p-3 text-xs">Audio</div>)}
       {a.tipo === 'texto' && <p className="whitespace-pre-wrap p-3 text-sm">{a.texto}</p>}
-      <div className="flex justify-between px-3 pb-2 text-[11px] text-neutral-500">
+      <div className="flex flex-wrap justify-between gap-x-2 px-3 pb-2 text-[11px] text-neutral-500">
         <span>{MOMENTO[a.momento]}</span>
         <span>{new Date(a.created_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}</span>
       </div>
