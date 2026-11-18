@@ -60,5 +60,31 @@ test.describe('CampoListo en modo demo', () => {
     const descarga = page.waitForEvent('download')
     await page.getByRole('button', { name: /Hoja de servicio/ }).click()
     expect((await descarga).suggestedFilename()).toBe('hoja-servicio-6.pdf')
+
+    // Reporte de horas (CU-15)
+    await page.getByRole('link', { name: 'Horas', exact: true }).click()
+    await expect(page.getByRole('heading', { name: 'Horas por técnico' })).toBeVisible()
+    await expect(page.getByRole('cell', { name: 'Total' })).toBeVisible()
+    const csv = page.waitForEvent('download')
+    await page.getByRole('button', { name: /Exportar a Excel/ }).click()
+    expect((await csv).suggestedFilename()).toBe('horas-por-semana.csv')
   })
+})
+
+test('todas las pantallas del administrador abren sin errores', async ({ page }) => {
+  const errores: string[] = []
+  page.on('pageerror', (e) => errores.push(e.message))
+  await page.goto('/')
+  await page.getByRole('button', { name: /Dueño/ }).click()
+  for (const [link, titulo] of [
+    ['Tablero', 'Tablero'], ['Nueva orden', 'Nueva orden de servicio'], ['Clientes', 'Clientes'],
+    ['Horas', 'Horas por técnico'], ['Usuarios', 'Usuarios'], ['Empresa', 'Datos de la empresa'],
+  ]) {
+    await page.getByRole('navigation').getByRole('link', { name: link, exact: true }).click()
+    await expect(page.getByRole('heading', { name: titulo, exact: true })).toBeVisible()
+  }
+  await page.getByRole('navigation').getByRole('link', { name: 'Clientes', exact: true }).click()
+  await page.getByRole('link', { name: /Rancho El Saguaro/ }).click()
+  await expect(page.getByText(/Expediente/)).toBeVisible()
+  expect(errores).toEqual([])
 })

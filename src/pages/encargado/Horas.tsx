@@ -11,7 +11,7 @@ export function Horas() {
   const { sesion } = useSesion()
   const [vista, setVista] = useState<'dia' | 'semana'>('semana')
   const usuarios = useLiveQuery(() => db.usuarios.where('empresa_id').equals(sesion!.empresa.id).toArray(), [sesion!.empresa.id], [])
-  const registros = useLiveQuery(() => db.registros_tiempo.where('empresa_id').equals(sesion!.empresa.id).toArray(), [sesion!.empresa.id], [])
+  const registros = useLiveQuery(() => db.registros_tiempo.filter((r) => r.empresa_id === sesion!.empresa.id).toArray(), [sesion!.empresa.id], [])
   const filas = vista === 'dia' ? horasPorDia(registros) : horasPorSemana(registros)
   const nombre = (id: string) => usuarios.find((u) => u.id === id)?.nombre ?? id
   const total = filas.reduce((s, f) => s + f.minutos, 0)
