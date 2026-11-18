@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { Mic, Square } from 'lucide-react'
 import { Boton } from './ui'
 
 // Grabar una nota de voz (para el reporte de falla o la evidencia).
@@ -26,12 +27,12 @@ export function Grabadora({ onListo }: { onListo: (audio: Blob) => void }) {
   }
 
   return grabando ? (
-    <Boton type="button" variante="peligro" onClick={() => { rec.current?.stop(); setGrabando(false) }}>
-      ⏹ Detener grabación
+    <Boton type="button" variante="peligro" icono={Square} className="min-h-14 latido" onClick={() => { rec.current?.stop(); setGrabando(false) }}>
+      Detener
     </Boton>
   ) : (
-    <Boton type="button" variante="secundario" onClick={iniciar}>
-      🎙️ Grabar audio
+    <Boton type="button" variante="secundario" icono={Mic} className="min-h-14" onClick={iniciar}>
+      Grabar audio
     </Boton>
   )
 }

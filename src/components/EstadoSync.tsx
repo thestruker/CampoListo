@@ -1,10 +1,11 @@
 import { useLiveQuery } from 'dexie-react-hooks'
+import { CloudCheck, CloudOff, CloudUpload } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { db } from '../lib/db'
-import { sincronizar } from '../lib/sync'
 import { useSesion } from '../lib/sesion'
+import { sincronizar } from '../lib/sync'
 
-// Indicador de conexión y de elementos pendientes por subir (RNF: el usuario siempre sabe qué falta).
+// Indicador de conexión y de elementos pendientes por subir (el usuario siempre sabe qué falta).
 export function EstadoSync() {
   const { sesion } = useSesion()
   const pendientes = useLiveQuery(() => db.outbox.count(), [], 0)
@@ -28,16 +29,17 @@ export function EstadoSync() {
     setSubiendo(false)
   }
 
+  const Icono = !enLinea ? CloudOff : pendientes ? CloudUpload : CloudCheck
   return (
     <button
       onClick={ahora}
       data-testid="estado-sync"
       title="Sincronizar ahora"
-      className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${
-        enLinea ? (pendientes ? 'bg-sol-400 text-campo-900' : 'bg-white/15 text-white') : 'bg-red-600 text-white'
+      className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition ${
+        enLinea ? (pendientes ? 'bg-sol-400 text-campo-900' : 'bg-white/12 text-white ring-1 ring-white/20') : 'bg-red-500 text-white'
       }`}
     >
-      <span className={`h-2 w-2 rounded-full ${enLinea ? 'bg-emerald-300' : 'bg-white'} ${subiendo ? 'animate-pulse' : ''}`} />
+      <Icono className={`h-4 w-4 ${subiendo || (enLinea && pendientes) ? 'latido' : ''}`} />
       {enLinea ? (pendientes ? `${pendientes} por subir` : 'Al día') : `Sin señal${pendientes ? ` · ${pendientes} guardados` : ''}`}
     </button>
   )

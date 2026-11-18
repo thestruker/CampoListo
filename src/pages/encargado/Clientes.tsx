@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { Boton, Campo, entrada, Estado, fechaCorta, Tarjeta, Titulo, Vacio } from '../../components/ui'
+import { Avatar, Boton, Campo, entrada, Estado, fechaCorta, Tarjeta, Titulo, Vacio } from '../../components/ui'
 import { guardarCliente } from '../../lib/acciones'
 import { db } from '../../lib/db'
 import { obtenerPosicion } from '../../lib/geo'
@@ -64,12 +64,15 @@ export function Clientes() {
       )}
       <input className={`${entrada} mb-3`} placeholder="Buscar por nombre, dirección o teléfono…" value={q} onChange={(e) => setQ(e.target.value)} />
       {!lista.length ? <Vacio>No hay clientes.</Vacio> : (
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           {lista.map((c) => (
-            <Link key={c.id} to={`/clientes/${c.id}`} className="rounded-xl border border-campo-100 bg-white p-3 hover:border-campo-500">
-              <div className="font-semibold">{c.nombre}</div>
-              <div className="text-sm text-neutral-600">{c.direccion}</div>
-              <div className="mt-1 text-xs text-neutral-500">{ordenes.filter((o) => o.cliente_id === c.id).length} servicios</div>
+            <Link key={c.id} to={`/clientes/${c.id}`} className="flex items-center gap-3 rounded-3xl bg-white p-4 shadow-suave ring-1 ring-campo-100/80 transition hover:-translate-y-0.5 hover:shadow-alta">
+              <Avatar nombre={c.nombre} tam="lg" />
+              <div className="min-w-0 flex-1">
+                <div className="truncate font-bold text-campo-900">{c.nombre}</div>
+                <div className="truncate text-sm text-neutral-500">{c.direccion}</div>
+              </div>
+              <span className="rounded-full bg-campo-50 px-2.5 py-1 text-xs font-bold text-campo-700">{ordenes.filter((o) => o.cliente_id === c.id).length} servicios</span>
             </Link>
           ))}
         </div>

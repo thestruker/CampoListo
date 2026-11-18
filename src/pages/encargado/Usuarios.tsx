@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useState } from 'react'
-import { Boton, Campo, entrada, Tarjeta, Titulo } from '../../components/ui'
+import { Avatar, Boton, Campo, entrada, Tarjeta, Titulo } from '../../components/ui'
 import { actualizarUsuario, crearUsuario } from '../../lib/acciones'
 import { db } from '../../lib/db'
 import { esDemo, useSesion } from '../../lib/sesion'
@@ -47,9 +47,9 @@ export function Usuarios() {
           <tbody>
             {usuarios.map((u) => (
               <tr key={u.id} className="border-t border-campo-100">
-                <td className="py-2">{u.nombre}<div className="text-xs text-neutral-500">{u.correo}</div></td>
+                <td className="py-3"><div className="flex items-center gap-3"><Avatar nombre={u.nombre} /><div>{u.nombre}<div className="text-xs text-neutral-500">{u.correo}</div></div></div></td>
                 <td>
-                  <select className="rounded-lg border border-campo-200 px-2 py-1" value={u.rol} disabled={u.id === sesion!.usuario.id}
+                  <select className="rounded-xl bg-campo-50 px-2 py-1.5 ring-1 ring-campo-100" value={u.rol} disabled={u.id === sesion!.usuario.id}
                     onChange={(e) => actualizarUsuario({ ...u, rol: e.target.value as Rol })}>
                     {ROLES.map((r) => <option key={r.v} value={r.v}>{r.t}</option>)}
                   </select>

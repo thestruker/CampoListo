@@ -14,7 +14,7 @@ function Vista({ a }: { a: Adjunto }) {
     }
   }, [a.id, a.storage_path])
   return (
-    <div className="overflow-hidden rounded-xl border border-campo-100 bg-campo-50">
+    <div className="aparecer overflow-hidden rounded-2xl bg-campo-50/70 ring-1 ring-campo-100">
       {a.tipo === 'foto' && (url ? <img src={url} alt="" className="aspect-[4/3] w-full object-cover" /> : <div className="aspect-[4/3] grid place-items-center text-xs text-neutral-400">Foto en el servidor</div>)}
       {a.tipo === 'audio' && (url ? <audio controls src={url} className="w-full p-2" /> : <div className="p-3 text-xs">Audio</div>)}
       {a.tipo === 'texto' && <p className="whitespace-pre-wrap p-3 text-sm">{a.texto}</p>}

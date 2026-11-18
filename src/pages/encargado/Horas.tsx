@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useState } from 'react'
-import { Boton, fechaCorta, Tarjeta, Titulo, Vacio } from '../../components/ui'
+import { CalendarClock, Download } from 'lucide-react'
+import { Avatar, Boton, fechaCorta, Tarjeta, Titulo, Vacio } from '../../components/ui'
 import { aCsv, descargar } from '../../lib/csv'
 import { db } from '../../lib/db'
 import { formatoHoras, horasPorDia, horasPorSemana } from '../../lib/horas'
@@ -15,6 +16,7 @@ export function Horas() {
   const filas = vista === 'dia' ? horasPorDia(registros) : horasPorSemana(registros)
   const nombre = (id: string) => usuarios.find((u) => u.id === id)?.nombre ?? id
   const total = filas.reduce((s, f) => s + f.minutos, 0)
+  const maximo = Math.max(1, ...filas.map((f) => f.minutos))
 
   function exportar() {
     const csv = aCsv([
@@ -26,21 +28,26 @@ export function Horas() {
 
   return (
     <div>
-      <Titulo accion={<Boton onClick={exportar} disabled={!filas.length}>⬇ Exportar a Excel (CSV)</Boton>}>Horas por técnico</Titulo>
-      <p className="mb-3 text-sm text-neutral-600">Calculadas con las llegadas y salidas registradas en cada orden. Sirven para el registro de jornada que pide la reforma laboral.</p>
-      <div className="mb-3 flex gap-2">
-        <Boton variante={vista === 'semana' ? 'primario' : 'secundario'} onClick={() => setVista('semana')}>Por semana</Boton>
-        <Boton variante={vista === 'dia' ? 'primario' : 'secundario'} onClick={() => setVista('dia')}>Por día</Boton>
+      <Titulo sub="Calculadas con las llegadas y salidas de cada orden. Listas para el registro de jornada de la reforma laboral." accion={<Boton icono={Download} onClick={exportar} disabled={!filas.length}>Exportar a Excel (CSV)</Boton>}>Horas por técnico</Titulo>
+      <div className="mb-4 inline-flex rounded-2xl bg-white p-1 shadow-suave ring-1 ring-campo-100">
+        {(['semana', 'dia'] as const).map((v) => (
+          <button key={v} onClick={() => setVista(v)} className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${vista === v ? 'bg-campo-700 text-white' : 'text-neutral-500'}`}>{v === 'semana' ? 'Por semana' : 'Por día'}</button>
+        ))}
       </div>
-      {!filas.length ? <Vacio>Todavía no hay llegadas y salidas registradas.</Vacio> : (
+      {!filas.length ? <Vacio icono={CalendarClock}>Todavía no hay llegadas y salidas registradas.</Vacio> : (
         <Tarjeta>
           <table className="w-full text-sm">
             <thead><tr className="text-left text-neutral-500"><th className="py-1">{vista === 'dia' ? 'Día' : 'Semana del'}</th><th>Técnico</th><th className="text-right">Servicios</th><th className="text-right">Horas</th></tr></thead>
             <tbody>
               {filas.map((f) => (
                 <tr key={f.dia + f.tecnico_id} className="border-t border-campo-100">
-                  <td className="py-2">{fechaCorta(f.dia)}</td><td>{nombre(f.tecnico_id)}</td>
-                  <td className="text-right">{f.servicios}</td><td className="text-right font-semibold">{formatoHoras(f.minutos)}</td>
+                  <td className="py-3">{fechaCorta(f.dia)}</td>
+                  <td><span className="flex items-center gap-2"><Avatar nombre={nombre(f.tecnico_id)} tam="sm" />{nombre(f.tecnico_id)}</span></td>
+                  <td className="text-right">{f.servicios}</td>
+                  <td className="w-48 text-right">
+                    <div className="font-bold text-campo-900">{formatoHoras(f.minutos)}</div>
+                    <div className="mt-1 h-1.5 rounded-full bg-campo-50"><div className="ml-auto h-1.5 rounded-full bg-gradient-to-r from-campo-500 to-sol-400" style={{ width: `${Math.min(100, (f.minutos / maximo) * 100)}%` }} /></div>
+                  </td>
                 </tr>
               ))}
               <tr className="border-t-2 border-campo-200 font-bold"><td className="py-2" colSpan={3}>Total</td><td className="text-right">{formatoHoras(total)}</td></tr>

@@ -32,7 +32,7 @@ export function FirmaPad({ onCambio }: { onCambio: (dataUrl: string) => void }) 
       <canvas
         ref={ref}
         data-testid="firma"
-        className="h-40 w-full touch-none rounded-xl border-2 border-dashed border-campo-200 bg-white"
+        className="h-44 w-full touch-none rounded-2xl border-2 border-dashed border-campo-200 bg-white"
         onPointerDown={(e) => {
           dibujando.current = true
           ;(e.target as HTMLCanvasElement).setPointerCapture(e.pointerId)

@@ -1,9 +1,10 @@
 import { useLiveQuery } from 'dexie-react-hooks'
+import { AlertTriangle, CalendarDays, CheckCircle2, ClipboardList, FileDown, MapPin, Plus, SearchX } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Boton, entrada, Estado, fechaCorta, hoy, Tarjeta, Titulo, Vacio } from '../../components/ui'
+import { Avatar, Boton, COLOR_ESTADO, entrada, fechaCorta, hoy, Kpi, Titulo, Vacio } from '../../components/ui'
 import { db } from '../../lib/db'
-import { abiertasSinSalida, ETIQUETA_ESTADO } from '../../lib/reglas'
+import { abiertasSinSalida, estaEnSitio, ETIQUETA_ESTADO } from '../../lib/reglas'
 import { useSesion } from '../../lib/sesion'
 import type { EstadoOrden } from '../../lib/types'
 
@@ -28,6 +29,8 @@ export function Tablero() {
   inicioHoy.setHours(0, 0, 0, 0)
   const sinSalida = useMemo(() => abiertasSinSalida(registros, inicioHoy), [registros])
   const ordenesSinSalida = new Set(sinSalida.map((s) => s.orden_id))
+  const tecnicos = usuarios.filter((u) => u.rol === 'tecnico')
+  const enSitioAhora = tecnicos.filter((t) => ordenes.some((o) => estaEnSitio(registros, t.id, o.id))).length
 
   const filtradas = ordenes
     .filter((o) => !fecha || o.fecha_programada === fecha)
@@ -35,8 +38,8 @@ export function Tablero() {
     .filter((o) => !tecnico || asign.some((a) => a.orden_id === o.id && a.tecnico_id === tecnico && !a.eliminado))
     .sort((a, b) => a.fecha_programada.localeCompare(b.fecha_programada) || (a.folio ?? 0) - (b.folio ?? 0))
 
-  const nombre = (id: string) => usuarios.find((u) => u.id === id)?.nombre.split(' ')[0] ?? '¿?'
-  const tecnicos = usuarios.filter((u) => u.rol === 'tecnico')
+  const usuario = (id: string) => usuarios.find((u) => u.id === id)
+  const nombre = (id: string) => usuario(id)?.nombre.split(' ')[0] ?? '¿?'
   const columnas = COLUMNAS.filter((c) => verCerradas || (c !== 'cerrada' && c !== 'cancelada'))
 
   async function descargarDia() {
@@ -49,71 +52,93 @@ export function Tablero() {
   }
 
   return (
-    <div>
-      <Titulo accion={<Link to="/ordenes/nueva"><Boton>+ Nueva orden</Boton></Link>}>Tablero</Titulo>
+    <div className="space-y-5">
+      <Titulo
+        sub={new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' })}
+        accion={<Link to="/ordenes/nueva"><Boton icono={Plus}>Nueva orden</Boton></Link>}
+      >
+        Tablero
+      </Titulo>
+
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Kpi icono={CalendarDays} valor={ordenes.filter((o) => o.fecha_programada === hoy() && o.estado !== 'cancelada').length} etiqueta="Órdenes para hoy" />
+        <Kpi icono={MapPin} tono="azul" valor={enSitioAhora} etiqueta="Técnicos en sitio ahora" />
+        <Kpi icono={AlertTriangle} tono="ambar" valor={sinSalida.length} etiqueta="Pendientes de cierre" />
+        <Kpi icono={CheckCircle2} tono="sol" valor={ordenes.filter((o) => o.estado === 'terminada').length} etiqueta="Terminadas por cerrar" />
+      </div>
 
       {sinSalida.length > 0 && (
-        <Tarjeta className="mb-4 border-amber-300 bg-amber-50" >
-          <p className="font-semibold text-amber-900">⚠️ {sinSalida.length} {sinSalida.length === 1 ? 'orden quedó abierta' : 'órdenes quedaron abiertas'} sin registrar salida</p>
-          <ul className="mt-1 text-sm text-amber-900">
-            {sinSalida.map((s) => {
-              const o = ordenes.find((x) => x.id === s.orden_id)
-              return (
-                <li key={s.orden_id + s.tecnico_id}>
-                  <Link className="underline" to={`/ordenes/${s.orden_id}`}>Folio {o?.folio ?? '—'}</Link> · {nombre(s.tecnico_id)} llegó el{' '}
-                  {new Date(s.llegada).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}
-                </li>
-              )
-            })}
-          </ul>
-        </Tarjeta>
+        <div className="flex gap-3 rounded-3xl bg-amber-50 p-4 ring-1 ring-amber-200">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-amber-100 text-amber-700"><AlertTriangle className="h-5 w-5" /></span>
+          <div className="text-sm text-amber-900">
+            <p className="font-bold">{sinSalida.length} {sinSalida.length === 1 ? 'orden quedó abierta' : 'órdenes quedaron abiertas'} sin registrar salida</p>
+            <ul className="mt-1 space-y-0.5">
+              {sinSalida.map((s) => {
+                const o = ordenes.find((x) => x.id === s.orden_id)
+                return (
+                  <li key={s.orden_id + s.tecnico_id}>
+                    <Link className="font-semibold underline" to={`/ordenes/${s.orden_id}`}>Folio {o?.folio ?? '—'}</Link> · {nombre(s.tecnico_id)} llegó el{' '}
+                    {new Date(s.llegada).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+        </div>
       )}
 
-      <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <input aria-label="Fecha" type="date" className={entrada} value={fecha} onChange={(e) => setFecha(e.target.value)} />
-        <select aria-label="Técnico" className={entrada} value={tecnico} onChange={(e) => setTecnico(e.target.value)}>
+      <div className="flex flex-wrap items-center gap-2 rounded-3xl bg-white p-3 shadow-suave ring-1 ring-campo-100/80">
+        <input aria-label="Fecha" type="date" className={`${entrada} w-auto flex-1 py-2`} value={fecha} onChange={(e) => setFecha(e.target.value)} />
+        <select aria-label="Técnico" className={`${entrada} w-auto flex-1 py-2`} value={tecnico} onChange={(e) => setTecnico(e.target.value)}>
           <option value="">Todos los técnicos</option>
           {tecnicos.map((t) => <option key={t.id} value={t.id}>{t.nombre}</option>)}
         </select>
-        <select aria-label="Cliente" className={entrada} value={cliente} onChange={(e) => setCliente(e.target.value)}>
+        <select aria-label="Cliente" className={`${entrada} w-auto flex-1 py-2`} value={cliente} onChange={(e) => setCliente(e.target.value)}>
           <option value="">Todos los clientes</option>
           {clientes.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
         </select>
-        <Boton variante="secundario" onClick={descargarDia} disabled={generando}>
-          {generando ? 'Generando…' : `📄 PDF del ${fecha ? fechaCorta(fecha) : 'día'}`}
+        <Boton variante="secundario" icono={FileDown} onClick={descargarDia} disabled={generando}>
+          {generando ? 'Generando…' : `PDF del ${fecha ? fechaCorta(fecha) : 'día'}`}
         </Boton>
+        <label className="flex items-center gap-2 px-2 text-sm text-neutral-600">
+          <input type="checkbox" className="h-4 w-4 accent-campo-700" checked={verCerradas} onChange={(e) => setVerCerradas(e.target.checked)} /> Ver cerradas
+        </label>
       </div>
-      <label className="mb-3 flex items-center gap-2 text-sm text-neutral-600">
-        <input type="checkbox" checked={verCerradas} onChange={(e) => setVerCerradas(e.target.checked)} /> Ver cerradas y canceladas
-      </label>
 
       {!filtradas.length ? (
-        <Vacio>No hay órdenes con estos filtros.</Vacio>
+        <Vacio icono={SearchX}>No hay órdenes con estos filtros.</Vacio>
       ) : (
-        <div className="flex gap-3 overflow-x-auto pb-3">
+        <div className="-mx-4 flex gap-4 overflow-x-auto px-4 pb-3">
           {columnas.map((col) => {
             const lista = filtradas.filter((o) => o.estado === col)
             return (
               <section key={col} className="min-w-52 flex-1">
-                <h2 className="mb-2 flex items-center justify-between text-sm font-bold text-campo-900">
-                  {ETIQUETA_ESTADO[col]} <span className="rounded-full bg-campo-100 px-2 text-xs">{lista.length}</span>
+                <h2 className="mb-3 flex items-center gap-2 px-1 text-sm font-bold text-campo-900">
+                  <span className={`h-2.5 w-2.5 rounded-full ${COLOR_ESTADO[col].punto}`} />
+                  {ETIQUETA_ESTADO[col]}
+                  <span className="ml-auto rounded-full bg-white px-2 py-0.5 text-xs text-neutral-500 shadow-sm ring-1 ring-campo-100">{lista.length}</span>
                 </h2>
-                <div className="space-y-2">
+                <div className="space-y-3">
+                  {!lista.length && <div className="rounded-2xl border-2 border-dashed border-campo-100 p-4 text-center text-xs text-neutral-400">Sin órdenes</div>}
                   {lista.map((o) => {
-                    const tecs = asign.filter((a) => a.orden_id === o.id && !a.eliminado).map((a) => nombre(a.tecnico_id))
+                    const tecs = asign.filter((a) => a.orden_id === o.id && !a.eliminado).map((a) => usuario(a.tecnico_id)).filter(Boolean)
+                    const pendiente = ordenesSinSalida.has(o.id)
                     return (
-                      <Link key={o.id} to={`/ordenes/${o.id}`} className={`block rounded-xl border bg-white p-3 shadow-sm hover:border-campo-500 ${ordenesSinSalida.has(o.id) ? 'border-amber-400 ring-2 ring-amber-200' : 'border-campo-100'}`}>
-                        <div className="flex items-center justify-between text-xs text-neutral-500">
-                          <span>Folio {o.folio ?? 'por asignar'}</span>
+                      <Link key={o.id} to={`/ordenes/${o.id}`}
+                        className={`group relative block overflow-hidden rounded-2xl bg-white p-4 pl-5 shadow-suave ring-1 transition hover:-translate-y-0.5 hover:shadow-alta ${pendiente ? 'ring-2 ring-amber-300' : 'ring-campo-100/80'}`}>
+                        <span className={`absolute inset-y-0 left-0 w-1.5 ${COLOR_ESTADO[o.estado].barra}`} />
+                        <div className="flex items-center justify-between text-[11px] font-semibold text-neutral-400">
+                          <span className="rounded-md bg-campo-50 px-1.5 py-0.5 text-campo-700">#{o.folio ?? '—'}</span>
                           <span>{fechaCorta(o.fecha_programada)}</span>
                         </div>
-                        <div className="mt-1 font-semibold leading-snug">{o.titulo}</div>
-                        <div className="text-sm text-neutral-600">{clientes.find((c) => c.id === o.cliente_id)?.nombre}</div>
-                        <div className="mt-2 flex items-center justify-between">
-                          <Estado estado={o.estado} />
-                          <span className="text-xs text-neutral-500">{tecs.join(', ') || 'Sin técnico'}</span>
+                        <div className="mt-2 font-bold leading-snug text-campo-900 group-hover:text-campo-700">{o.titulo}</div>
+                        <div className="mt-0.5 truncate text-sm text-neutral-500">{clientes.find((c) => c.id === o.cliente_id)?.nombre}</div>
+                        <div className="mt-3 flex items-center justify-between">
+                          <div className="flex -space-x-2">
+                            {tecs.length ? tecs.map((t) => <Avatar key={t!.id} nombre={t!.nombre} tam="sm" />) : <span className="text-xs text-neutral-400">Sin técnico</span>}
+                          </div>
+                          {pendiente && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">Pendiente de cierre</span>}
                         </div>
-                        {ordenesSinSalida.has(o.id) && <div className="mt-1 text-xs font-semibold text-amber-700">Pendiente de cierre</div>}
                       </Link>
                     )
                   })}
@@ -123,6 +148,7 @@ export function Tablero() {
           })}
         </div>
       )}
+      {!ordenes.length && <Vacio icono={ClipboardList}>Todavía no hay órdenes.</Vacio>}
     </div>
   )
 }

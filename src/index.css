@@ -1,17 +1,40 @@
 @import "tailwindcss";
+@import "@fontsource-variable/plus-jakarta-sans";
 
 @theme {
-  --color-campo-50: #f6f3ea;
-  --color-campo-100: #ece6d4;
-  --color-campo-200: #d9cfb1;
-  --color-campo-500: #4f7a5f;
+  --color-campo-50: #f7f5ee;
+  --color-campo-100: #ebe6d6;
+  --color-campo-200: #d8cfb3;
+  --color-campo-300: #b9c9bd;
+  --color-campo-500: #3f7a5c;
+  --color-campo-600: #2c6249;
   --color-campo-700: #1f4e3d;
-  --color-campo-900: #12301f;
-  --color-sol-400: #e9b949;
+  --color-campo-800: #173d30;
+  --color-campo-900: #102a21;
+  --color-sol-100: #fbf0d0;
+  --color-sol-400: #eab64a;
+  --color-sol-500: #d99f2b;
   --color-sol-600: #b8861b;
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-sans: "Plus Jakarta Sans Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --shadow-suave: 0 1px 2px rgb(16 42 33 / 0.04), 0 4px 16px -4px rgb(16 42 33 / 0.08);
+  --shadow-alta: 0 2px 4px rgb(16 42 33 / 0.05), 0 16px 32px -12px rgb(16 42 33 / 0.18);
 }
 
 html, body, #root { height: 100%; }
-body { background: var(--color-campo-50); color: #1c2420; -webkit-tap-highlight-color: transparent; }
+body {
+  background:
+    radial-gradient(1200px 500px at 100% -10%, rgb(234 182 74 / 0.10), transparent 60%),
+    radial-gradient(900px 400px at -10% 0%, rgb(63 122 92 / 0.08), transparent 60%),
+    var(--color-campo-50);
+  background-attachment: fixed;
+  color: #17221d;
+  -webkit-tap-highlight-color: transparent;
+  font-feature-settings: "ss01";
+}
 input, select, textarea { font-size: 16px; } /* evita el zoom automático en iPhone */
+::selection { background: var(--color-sol-100); }
+
+@keyframes aparecer { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.aparecer { animation: aparecer .35s ease-out both; }
+@keyframes latido { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+.latido { animation: latido 1.6s ease-in-out infinite; }
