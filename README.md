@@ -62,11 +62,11 @@ npm run test:e2e  # extremo a extremo (Playwright): técnico sin señal, encarga
 
 Sigue [`supabase/README.md`](supabase/README.md) y después copia `.env.example` a `.env` con tus llaves.
 
-## Publicar (Cloudflare Pages)
+## Publicar (Cloudflare Workers)
 
-1. En Cloudflare: **Workers & Pages → Create → Pages → Connect to Git** y elige este repositorio.
-2. Build command: `npm run build` · Build output: `dist` · Variable `NODE_VERSION=22`.
-3. Agrega las variables `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` y `VITE_VAPID_PUBLIC_KEY` (o déjalas vacías para publicar el modo demo).
-4. Cada `git push` a `main` publica una nueva versión. `public/_redirects` y `public/_headers` ya están listos para que las rutas y el service worker funcionen.
+1. En Cloudflare: **Workers & Pages → Create → Import a repository** y elige este repositorio.
+2. Build command: `npm run build` · Deploy command: `npx wrangler deploy` (usa `wrangler.jsonc`).
+3. Para conectar el backend agrega como variables de build `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` y `VITE_VAPID_PUBLIC_KEY`; sin ellas se publica el modo demo.
+4. Cada `git push` a `main` publica una nueva versión. `wrangler.jsonc` hace que cualquier ruta regrese la app (SPA) y `public/_headers` evita que el service worker se quede en caché.
 
 > En iPhone, las notificaciones y el almacenamiento duradero requieren instalar la app: **Compartir → Agregar a pantalla de inicio** (iOS 16.4 o más nuevo).

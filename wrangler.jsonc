@@ -1,0 +1,11 @@
+{
+  // Publicación en Cloudflare Workers (tarea 4.3): sitio estático con la app ya construida en ./dist.
+  // Build command: npm run build · Deploy command: npx wrangler deploy
+  "name": "campolisto",
+  "compatibility_date": "2026-11-18",
+  "assets": {
+    "directory": "./dist",
+    // Cualquier ruta de la app (/ordenes/..., /clientes/...) regresa index.html y React Router la resuelve.
+    "not_found_handling": "single-page-application"
+  }
+}
