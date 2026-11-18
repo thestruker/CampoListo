@@ -89,7 +89,7 @@ export async function cargarDemoSiHaceFalta() {
   const asig = (orden: Orden, tec: Usuario) => ({ id: nuevoId(), orden_id: orden.id, tecnico_id: tec.id, empresa_id: EMPRESA_ID, updated_at: t })
   const ot = [asig(o1, luis), asig(o1, ramon), asig(o2, ramon), asig(o3, luis), asig(o4, ramon), asig(o4, luis)]
   const r = (orden: Orden, tec: Usuario, tipo: RegistroTiempo['tipo'], hora: string, cli: Cliente): RegistroTiempo => ({
-    id: nuevoId(), empresa_id: EMPRESA_ID, orden_id: orden.id, tecnico_id: tec.id, tipo, hora_dispositivo: hora,
+    id: nuevoId(), empresa_id: EMPRESA_ID, orden_id: orden.id, tecnico_id: tec.id, tipo, origen: tipo === 'llegada' ? 'evidencia' : 'firma', hora_dispositivo: hora,
     hora_servidor: hora, lat: cli.lat, lng: cli.lng, precision_m: 12, revisar: false, updated_at: t,
   })
   const registros = [

@@ -74,12 +74,16 @@ export interface OrdenTecnico {
 
 export type TipoRegistro = 'llegada' | 'salida'
 
+/** Qué generó el registro de tiempo (entrevista 3: que no dependa de acordarse de un botón). */
+export type OrigenRegistro = 'boton' | 'evidencia' | 'firma' | 'terminar'
+
 export interface RegistroTiempo {
   id: string
   empresa_id: string
   orden_id: string
   tecnico_id: string
   tipo: TipoRegistro
+  origen?: OrigenRegistro
   hora_dispositivo: string
   hora_servidor?: string | null
   lat?: number | null

@@ -12,7 +12,7 @@ import {
   puedeRegistrarSalida,
 } from './reglas'
 import { MODO_DEMO, supabase } from './supabase'
-import type { Adjunto, Cliente, Empresa, Firma, Momento, Orden, RegistroTiempo, Usuario } from './types'
+import type { Adjunto, Cliente, Empresa, Firma, Momento, Orden, OrigenRegistro, RegistroTiempo, Usuario } from './types'
 
 // Acciones de la app. Todas guardan primero en el celular (con su elemento en la cola de salida),
 // así funcionan igual con o sin señal.
@@ -99,10 +99,10 @@ export async function tecnicosDeOrden(ordenId: string) {
 }
 
 /* ---------- CU-08 Llegada y CU-11 Salida ---------- */
-async function registrar(orden: Orden, tecnicoId: string, tipo: RegistroTiempo['tipo']) {
+async function registrar(orden: Orden, tecnicoId: string, tipo: RegistroTiempo['tipo'], origen: OrigenRegistro) {
   const pos = await obtenerPosicion()
   const r: RegistroTiempo = {
-    id: nuevoId(), empresa_id: orden.empresa_id, orden_id: orden.id, tecnico_id: tecnicoId, tipo,
+    id: nuevoId(), empresa_id: orden.empresa_id, orden_id: orden.id, tecnico_id: tecnicoId, tipo, origen,
     hora_dispositivo: ahora(), hora_servidor: null, lat: pos?.lat ?? null, lng: pos?.lng ?? null,
     precision_m: pos?.precision_m ?? null, revisar: false, updated_at: ahora(),
   }
@@ -110,21 +110,30 @@ async function registrar(orden: Orden, tecnicoId: string, tipo: RegistroTiempo['
   return r
 }
 
-export async function registrarLlegada(ordenId: string, tecnicoId: string) {
+export async function registrarLlegada(ordenId: string, tecnicoId: string, origen: OrigenRegistro = 'boton') {
   const orden = (await db.ordenes.get(ordenId))!
   const registros = await db.registros_tiempo.where('orden_id').equals(ordenId).toArray()
   if (!puedeRegistrarLlegada(orden, registros, tecnicoId)) throw new Error('Ya registraste tu llegada a esta orden.')
-  const r = await registrar(orden, tecnicoId, 'llegada')
+  const r = await registrar(orden, tecnicoId, 'llegada', origen)
   const estado = estadoTrasLlegada(orden.estado)
   if (estado !== orden.estado) await guardar('ordenes', { ...orden, estado })
   return r
 }
 
-export async function registrarSalida(ordenId: string, tecnicoId: string) {
+export async function registrarSalida(ordenId: string, tecnicoId: string, origen: OrigenRegistro = 'boton') {
   const orden = (await db.ordenes.get(ordenId))!
   const registros = await db.registros_tiempo.where('orden_id').equals(ordenId).toArray()
   if (!puedeRegistrarSalida(registros, tecnicoId, ordenId)) throw new Error('Primero registra tu llegada.')
-  return registrar(orden, tecnicoId, 'salida')
+  return registrar(orden, tecnicoId, 'salida', origen)
+}
+
+/** Si el técnico está asignado y no está en sitio, registra su llegada sin que tenga que acordarse. */
+async function llegadaAutomatica(orden: Orden, tecnicoId: string) {
+  const asignado = (await tecnicosDeOrden(orden.id)).includes(tecnicoId)
+  if (!asignado) return null
+  const registros = await db.registros_tiempo.where('orden_id').equals(orden.id).toArray()
+  if (!puedeRegistrarLlegada(orden, registros, tecnicoId)) return null
+  return registrarLlegada(orden.id, tecnicoId, 'evidencia')
 }
 
 /* ---------- CU-09 Evidencia y piezas ---------- */
@@ -134,6 +143,8 @@ export async function agregarAdjunto(
   datos: { tipo: Adjunto['tipo']; momento: Momento; texto?: string; archivo?: Blob | null },
   actualizaEstado = true,
 ) {
+  // La primera evidencia del técnico marca su llegada (con la hora y el GPS de ese momento).
+  if (actualizaEstado && datos.momento !== 'reporte') await llegadaAutomatica((await db.ordenes.get(orden.id)) ?? orden, autorId)
   let blob: Blob | null = null
   if (datos.archivo) blob = datos.tipo === 'foto' ? await comprimirFoto(datos.archivo) : datos.archivo
   const t = ahora()
@@ -155,10 +166,16 @@ export async function agregarMaterial(orden: Orden, descripcion: string, cantida
 }
 
 /* ---------- CU-10 Firma ---------- */
-export async function guardarFirma(orden: Orden, datos: Pick<Firma, 'nombre_recibe' | 'sin_firma_motivo' | 'imagen_data_url'>) {
+export async function guardarFirma(orden: Orden, datos: Pick<Firma, 'nombre_recibe' | 'sin_firma_motivo' | 'imagen_data_url'>, tecnicoId?: string) {
   const previa = await db.firmas.where('orden_id').equals(orden.id).first()
   const t = ahora()
-  return guardar('firmas', { id: previa?.id ?? nuevoId(), empresa_id: orden.empresa_id, orden_id: orden.id, created_at: previa?.created_at ?? t, updated_at: t, ...datos })
+  const firma = await guardar('firmas', { id: previa?.id ?? nuevoId(), empresa_id: orden.empresa_id, orden_id: orden.id, created_at: previa?.created_at ?? t, updated_at: t, ...datos })
+  // La firma del cliente marca la salida del técnico.
+  if (tecnicoId && (datos.imagen_data_url || datos.sin_firma_motivo)) {
+    const registros = await db.registros_tiempo.where('orden_id').equals(orden.id).toArray()
+    if (puedeRegistrarSalida(registros, tecnicoId, orden.id)) await registrarSalida(orden.id, tecnicoId, 'firma')
+  }
+  return firma
 }
 
 /* ---------- CU-11 Terminar visita ---------- */
@@ -169,7 +186,7 @@ export async function terminarOrden(ordenId: string, tecnicoId: string, resultad
   const faltan = faltantesParaTerminar(adjuntos, firma)
   if (faltan.length) throw new Error(`Para terminar falta: ${faltan.join(' y ')}.`)
   const registros = await db.registros_tiempo.where('orden_id').equals(ordenId).toArray()
-  if (puedeRegistrarSalida(registros, tecnicoId, ordenId)) await registrarSalida(ordenId, tecnicoId)
+  if (puedeRegistrarSalida(registros, tecnicoId, ordenId)) await registrarSalida(ordenId, tecnicoId, 'terminar')
   return guardar('ordenes', { ...orden, estado: 'terminada', resultados, observaciones })
 }
 
