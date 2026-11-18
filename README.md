@@ -45,11 +45,17 @@ supabase/     migraciones SQL, políticas RLS y Edge Functions (ver supabase/REA
 tests/        pruebas de extremo a extremo (Playwright)
 ```
 
+## Documentos
+
+- [Manual de usuario](docs/manual-de-usuario.pdf)
+- [Mockups de las pantallas](docs/mockups.pdf)
+- [Pitch](docs/pitch.pdf)
+
 ## Pruebas
 
 ```bash
 npm test          # pruebas unitarias (Vitest): horas, reglas, cola de salida, WhatsApp, CSV
-npm run test:e2e  # extremo a extremo (Playwright): flujo completo del técnico sin señal y del encargado
+npm run test:e2e  # extremo a extremo (Playwright): técnico sin señal, encargado y todas las pantallas
 ```
 
 ## Conectar el backend (Supabase)
