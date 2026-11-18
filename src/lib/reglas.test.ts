@@ -45,9 +45,11 @@ describe('reglas de registro', () => {
     const sinFirma = { imagen_data_url: '', sin_firma_motivo: 'No había nadie' } as Firma
     expect(faltantesParaTerminar([adj('evidencia')], sinFirma)).toEqual([])
   })
-  it('RN-05: marca para revisión si el reloj difiere más de 10 minutos', () => {
-    expect(requiereRevision('2026-11-16T08:00:00Z', '2026-11-16T08:09:00Z')).toBe(false)
-    expect(requiereRevision('2026-11-16T08:00:00Z', '2026-11-16T08:11:00Z')).toBe(true)
+  it('RN-05: marca para revisión si el reloj del celular va más de 10 minutos adelantado', () => {
+    expect(requiereRevision('2026-11-16T08:09:00Z', '2026-11-16T08:00:00Z')).toBe(false)
+    expect(requiereRevision('2026-11-16T08:11:00Z', '2026-11-16T08:00:00Z')).toBe(true)
+    // Registrado sin señal y subido 3 horas después: es normal
+    expect(requiereRevision('2026-11-16T08:00:00Z', '2026-11-16T11:00:00Z')).toBe(false)
   })
   it('RN-06: solo encargado o administrador cierran', () => {
     expect(puedeCerrarOCancelar('tecnico')).toBe(false)

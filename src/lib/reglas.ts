@@ -65,9 +65,13 @@ export function puedeCerrarOCancelar(rol: Rol) {
   return rol === 'encargado' || rol === 'administrador'
 }
 
-/** RN-05: marcar para revisión si la hora del celular difiere más de 10 min de la del servidor. */
+/**
+ * RN-05: marcar para revisión si la hora del celular está más de 10 min ADELANTADA respecto al servidor.
+ * Un registro hecho sin señal y subido horas después es normal y no se marca.
+ * (El servidor aplica la misma regla en el trigger revisar_hora.)
+ */
 export function requiereRevision(horaDispositivo: string, horaServidor: string, toleranciaMin = 10) {
-  return Math.abs(Date.parse(horaDispositivo) - Date.parse(horaServidor)) > toleranciaMin * 60_000
+  return Date.parse(horaDispositivo) - Date.parse(horaServidor) > toleranciaMin * 60_000
 }
 
 /**
